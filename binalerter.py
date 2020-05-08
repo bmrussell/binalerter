@@ -1,0 +1,99 @@
+import confuse
+import os
+import logging
+import requests
+import json
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
+
+class Config:
+    def __init__(self, url, address_url, collection_url, postcode, address, token, clients):
+        self.calendar_url = url
+        self.address_url = address_url
+        self.collection_url = collection_url
+        self.postcode = postcode
+        self.address = address
+        self.apitoken = token
+        self.clients = clients
+
+class BinAlerter:
+    def __init__(self):
+        """
+        Constructor
+            1. Read Configuration from YAML file
+            2. Initialise logging            
+        """
+        config = confuse.Configuration('BinAlerter')
+        self.config = config
+
+        logLevel = config['logLevel'].get()
+        if logLevel == "DEBUG":
+            l = logging.DEBUG
+        elif logLevel == "WARN":
+            l = logging.WARN
+
+        logfileName = os.path.join(config.config_dir(), "BinAlerter.log")
+        logging.basicConfig(filename=logfileName, filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', level=l)
+        logging.debug("BinAlerter:__init__ logging level " + logLevel)
+
+        self.config = Config(   config['scrape']['calendar_url'].get(),
+                                config['scrape']['address_url'].get(),
+                                config['scrape']['collection_url'].get(),
+                                config['location']['postcode'].get(),
+                                config['location']['address'].get(),
+                                config['pushover']['api_token'].get(),
+                                config['pushover']['clients'].get(),
+                            )
+
+        
+    def GetNextBinDay(self):
+        html = urlopen(self.config.calendar_url)
+        logging.debug("Opened page")
+        soup = BeautifulSoup(html.read(), 'html.parser')
+        logging.debug("Parsed page")
+
+        # Hit the collections web page, gimme cookie
+        session = requests.Session()
+        getLoginFormheaders = { 'Host': 'secure.tesco.com',
+                        'Connection': 'keep-alive',
+                        'DNT': '1',
+                        'Upgrade-Insecure-Requests': '1',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.113 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                        'Sec-Fetch-Site': 'none',
+                        'Sec-Fetch-Mode': 'navigate',
+                        'Sec-Fetch-Dest': 'document',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Accept-Language': 'en-GB,en;q=0.9,en-US;q=0.8'         
+                    }
+        request = requests.Request('GET',self.config.calendar_url)
+        prepared = request.prepare()
+        response = session.send(prepared)
+
+        # Work out what the next Monday is
+        # TODO: calendar maths
+
+        # Find addresses for the postcode  and date (for some reason)
+        params = {'Postcode': self.config.postcode, 'Month': '5', 'Year':'2020'}
+        r = requests.post(self.config.address_url, data=params)
+        addressJson = json.loads(r.text)
+
+        # Loop through the JSON response and find the address that matches the first line
+        # from config
+        # Then grab the UPRN value to post back as a unique id for that address
+        for address in addressJson["Model"]["PostcodeAddresses"]:
+            if address["AddressLine1"] == self.config.address:
+                uprn =  address["UPRN"]
+                break
+        
+        # Get the acutal calendar page
+        params = {'Month': '5', 'Year':'2020', 'Postcode': self.config.postcode, 'Uprn': uprn}
+        r = requests.post(self.config.collection_url, data=params)
+        
+
+
+        print(r.text)
+
+
+alerter = BinAlerter()
+alerter.GetNextBinDay()

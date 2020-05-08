@@ -1,0 +1,4 @@
+{
+    "python.pythonPath": "binEnv\\Scripts\\python.exe",
+    "python.envFile": ".env"
+}
