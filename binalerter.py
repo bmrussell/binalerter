@@ -1,3 +1,4 @@
+import datetime
 import confuse
 import os
 import logging
@@ -5,6 +6,7 @@ import requests
 import json
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
+from time import strptime
 
 class Config:
     def __init__(self, url, address_url, collection_url, postcode, address, token, clients):
@@ -45,15 +47,9 @@ class BinAlerter:
                                 config['pushover']['clients'].get(),
                             )
 
-        
-    def GetNextBinDay(self):
-        html = urlopen(self.config.calendar_url)
-        logging.debug("Opened page")
-        soup = BeautifulSoup(html.read(), 'html.parser')
-        logging.debug("Parsed page")
-
+    def GetBinPage(self, session):
         # Hit the collections web page, gimme cookie
-        session = requests.Session()
+        logging.debug("BinAlerter.GetBinPage()")
         getLoginFormheaders = { 'Host': 'secure.tesco.com',
                         'Connection': 'keep-alive',
                         'DNT': '1',
@@ -69,30 +65,61 @@ class BinAlerter:
         request = requests.Request('GET',self.config.calendar_url)
         prepared = request.prepare()
         response = session.send(prepared)
+        logging.debug("\tHTTP{}", response.status_code)
 
-        # Work out what the next Monday is
-        # TODO: calendar maths
+    def GetNextBinDay(self):
 
-        # Find addresses for the postcode  and date (for some reason)
-        params = {'Postcode': self.config.postcode, 'Month': '5', 'Year':'2020'}
+        logging.debug("BinAlerter.GetNextBinDay()")
+        session = requests.Session()
+        logging.debug("\tOpened session")
+
+        self.GetBinPage(session)
+
+        # Find addresses for the postcode and year/month (for some reason)
+        rightNow = datetime.datetime.now()
+        binMonth = rightNow.month
+        binYear = rightNow.year
+        binDay = rightNow.day   
+        params = {'Postcode': self.config.postcode, 'Month': binMonth, 'Year': binYear}
         r = requests.post(self.config.address_url, data=params)
         addressJson = json.loads(r.text)
 
         # Loop through the JSON response and find the address that matches the first line
         # from config
-        # Then grab the UPRN value to post back as a unique id for that address
+        # Grab the UPRN value to post back as a unique id for that address
         for address in addressJson["Model"]["PostcodeAddresses"]:
             if address["AddressLine1"] == self.config.address:
                 uprn =  address["UPRN"]
                 break
-        
-        # Get the acutal calendar page
-        params = {'Month': '5', 'Year':'2020', 'Postcode': self.config.postcode, 'Uprn': uprn}
+
+        # Get the calendar for the current month
+        # All being well we'll just look for the next date in that calendar that's flagged as a collection day
+        # If there is no date in this month after today, we'll need to pull the next months calendar and take the first 
+        # collection day from next month
+
+        params = {'Month': binMonth, 'Year': binYear, 'Postcode': self.config.postcode, 'Uprn': uprn}
         r = requests.post(self.config.collection_url, data=params)
         
+        soup = BeautifulSoup(r.text, 'html.parser')
+        # Calendar <a> elements are the following class values for data-event-id:
+        #   pod     Mixed dry recycling (blue lidded bin) and glass (black box or basket)
+        #   res     Household waste
+        #   cgw     Chargeable garden waste
 
-
-        print(r.text)
+        found = None
+        collectionDays = soup.find_all('a', {'data-event-id':{'pod','res','cgw'}})        
+        for collectionDay in collectionDays:
+            # Parse date in format "Monday 11 May, 2020"
+            collectionTime = strptime(collectionDay["data-original-datetext"], "%A %d %b, %Y")
+            collectionDate = datetime.datetime(collectionTime.tm_year, collectionTime.tm_mon, collectionTime.tm_mday)
+            if collectionDate > rightNow:
+                found = collectionDate
+                break
+        
+        if found != None:
+            print(found)
+        
+        logging.debug("\tDone")
 
 
 alerter = BinAlerter()
