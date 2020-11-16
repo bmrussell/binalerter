@@ -17,5 +17,6 @@ Scrapes https://ilforms.wiltshire.gov.uk/WasteCollectionDays/index
     .\binEnv\Scripts\python.exe -m pip install requests
     .\binEnv\Scripts\python.exe -m pip install confuse
     .\binEnv\Scripts\python.exe -m pip install schedule
+    .\binEnv\Scripts\python.exe -m pip install python-dotenv
 
 

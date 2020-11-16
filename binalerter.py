@@ -4,12 +4,15 @@ import os
 import logging
 import requests
 import json
+from os.path import join, dirname
+from dotenv import load_dotenv
 
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from time import strptime
 
 from yamlscheduler import YamlScheduler
+from pushover import Pushover
 
 class Config:
     def __init__(self, url, address_url, collection_url, postcode, address, token, clients):
@@ -137,31 +140,3 @@ class BinAlerter:
                 break
         
         logging.debug("\tDone")
-
-def CheckBinDay(arg):
-    alerter = BinAlerter()
-    alerter.GetNextBinDay()
-
-    print("Next collection day is: " + alerter.NextCollection.strftime('%d %B %Y'))
-    for bin in alerter.Collecting:
-            print("\t" + bin)
-
-def main() -> None:
-    #try:
-        print('===== START =====')
-        logging.basicConfig(filename="yamlscheduler.log", filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
-        
-        sch = YamlScheduler()
-        a = ['Hello', 'There']
-        YamlScheduler.Initialise(logging, CheckBinDay, a)
-        YamlScheduler.Wait()
-        print('===== END =====')
-
-    #except Exception as e:
-    #    print('Failed (' + e + ')')
-    #finally:
-        print('Done.')
-
-if __name__ == '__main__':
-    main()
-
