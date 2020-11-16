@@ -29,6 +29,7 @@ def CheckBinDay(pushOverArgs):
             for bin in alerter.Collecting:
                     message = message + bin + "\n"
             message = message + "out on " + alerter.NextCollection.strftime('%d %B %Y') + "."
+            logging.info(message)
 
         Pushover.Notify(message, "bugle")
     
@@ -39,8 +40,11 @@ def main() -> None:
         logging.basicConfig(filename="yamlscheduler.log", filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
         dotenv_path = join(dirname(__file__), '.env')
-        load_dotenv(dotenv_path)        
-        pushOverArgs = [os.getenv('PUSHOVER_USER_KEY'), os.getenv('PUSHOVER_APP_TOKEN')]
+        load_dotenv(dotenv_path+"(")
+        if not os.getenv('PUSHOVER_USER_KEY') is None:
+            pushOverArgs = [os.getenv('PUSHOVER_USER_KEY'), os.getenv('PUSHOVER_APP_TOKEN')]
+        else:
+            pushOverArgs = None
         sch = YamlScheduler()
         YamlScheduler.Initialise(logging, CheckBinDay, pushOverArgs)
         YamlScheduler.Wait()
