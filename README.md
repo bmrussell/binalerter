@@ -11,7 +11,11 @@ Scrapes https://ilforms.wiltshire.gov.uk/WasteCollectionDays/index
 `virtualenv binEnv`
 
 ## Dependencies
-`pip3 install beautifulsoup4`
-`pip3 install pyyaml`
-`pip3 install requests`
-`pip3 install confuse`
+
+    .\binEnv\Scripts\python.exe -m pip install beautifulsoup4
+    .\binEnv\Scripts\python.exe -m pip install pyyaml
+    .\binEnv\Scripts\python.exe -m pip install requests
+    .\binEnv\Scripts\python.exe -m pip install confuse
+    .\binEnv\Scripts\python.exe -m pip install schedule
+
+

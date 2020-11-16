@@ -1,0 +1,13 @@
+--- # Polling Schedule
+weekdays:
+  - weekday:
+      name: "sunday"
+      start: "19:00"
+      end: "19:30"
+      seconds: 1800
+
+  - weekday:
+      name: "monday"
+      start: "12:20"
+      end: "12:21"
+      seconds: 50
