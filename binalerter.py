@@ -23,8 +23,13 @@ class BinAlerter:
         """
         Constructor
             1. Read Configuration from YAML file
-            2. Initialise logging            
+            2. initialise class variables
+            3. Initialise logging            
         """
+        
+        self.NextCollection = None
+        self.Collecting = []
+        
         config = confuse.Configuration('BinAlerter')
         self.config = config
 
@@ -105,22 +110,35 @@ class BinAlerter:
         #   pod     Mixed dry recycling (blue lidded bin) and glass (black box or basket)
         #   res     Household waste
         #   cgw     Chargeable garden waste
-
-        found = None
-        collectionDays = soup.find_all('a', {'data-event-id':{'pod','res','cgw'}})        
+        
+        collectionDays = soup.find_all('a', {'data-event-id':{'pod','res','cgw'}})
+        iBinKind = 0
         for collectionDay in collectionDays:
             # Parse date in format "Monday 11 May, 2020"
-            collectionTime = strptime(collectionDay["data-original-datetext"], "%A %d %b, %Y")
+            collectionTime = strptime(collectionDay["data-original-datetext"], "%A %d %B, %Y")
             collectionDate = datetime.datetime(collectionTime.tm_year, collectionTime.tm_mon, collectionTime.tm_mday)
+
+            # We found the next collection day
             if collectionDate > rightNow:
-                found = collectionDate
+                if self.NextCollection is None:
+                    self.NextCollection = collectionDate
+                    logging.debug("Found next bin day" + self.NextCollection.strftime('%d %B %Y'))
+
+            # While we have the next collection day collect the next bin type
+            if (not self.NextCollection is None) and self.NextCollection == collectionDate:
+                self.Collecting.append(collectionDay["data-original-title"])
+                iBinKind = iBinKind + 1
+            
+            # Exit out if gone past the next collection day
+            if (not self.NextCollection is None) and collectionDate > self.NextCollection:
                 break
-        
-        if found != None:
-            print(found)
         
         logging.debug("\tDone")
 
 
 alerter = BinAlerter()
 alerter.GetNextBinDay()
+
+print("Next collection day is: " + alerter.NextCollection.strftime('%d %B %Y'))
+for bin in alerter.Collecting:
+        print("\t" + bin)
