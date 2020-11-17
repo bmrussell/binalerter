@@ -1,5 +1,5 @@
 # binalerter
-Alerts which bins need to go out from North Wilts Waste collection calendar
+Alerts which bins need to go out from North Wilts Waste collection calendar. Sends notifications via [Pushover](pushover.net/)
 
 # Data Source
 
