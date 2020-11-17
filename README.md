@@ -23,11 +23,13 @@ See `requirements.txt`:
 
 # Running in Docker
 
+Repo builds to https://hub.docker.com/repository/docker/bmrussell/binalerter
+
 1. Place `config.yaml` in `%APPDATA%\BinAlerter` 
 2. Edit `config.yaml` to supply address, schedule to check, and PushOver API credentials
 3. Run with Docker:
 
-    ```docker container run -d --mount type=bind,source="%APPDATA%\BinAlerter",target=/usr/src/app/config binalerter```
+    ```docker container run -d --restart=unless-stopped --mount type=bind,source="%APPDATA%\BinAlerter",target=/usr/src/app/config bmrussell/binalerter```
 
 ## Example config.yaml
 ```
