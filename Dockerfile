@@ -7,7 +7,7 @@ COPY requirements.txt .
 ENV BINALERTERDIR=./config
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY *.py .
+COPY *.py ./
 
 # ./config folder should be mounted to an OS folder that contains config.yaml
 COPY config.example.yaml ./config/
