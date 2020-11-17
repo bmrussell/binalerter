@@ -28,3 +28,28 @@ See `requirements.txt`:
 3. Run with Docker:
 
     ```docker container run -d --mount type=bind,source="%APPDATA%\BinAlerter",target=/usr/src/app/config binalerter```
+
+## Example config.yaml
+```
+appName: BinAlerter
+
+app:
+logLevel: DEBUG
+
+scrape:
+calendar_url: https://ilforms.wiltshire.gov.uk/WasteCollectionDays/index
+address_url: https://ilforms.wiltshire.gov.uk/WasteCollectionDays/AddressList
+collection_url: https://ilforms.wiltshire.gov.uk/WasteCollectionDays/CollectionList
+
+location:
+postcode: SN6 6NT
+address: 3 Park Place
+
+pushover:
+apptoken: 12345678901234567890
+userkey: 12345678901234567890
+
+schedule:
+day: "sunday"
+time: "19:00"
+```
