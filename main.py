@@ -1,26 +1,29 @@
 import datetime
 import os
+import time
 import logging
+import schedule
 from os.path import join, dirname
-from dotenv import load_dotenv
 
 from binalerter import BinAlerter
-from yamlscheduler import YamlScheduler
 from pushover import Pushover
+from config import Config
 
-def CheckBinDay(pushOverArgs):
+gbConfig = Config()
+
+def CheckBinDay():
     
     message = None
     try:
-        alerter = BinAlerter()
+        alerter = BinAlerter(gbConfig)
         alerter.GetNextBinDay()
     except Exception as e:
-        message = e
+        message = str(e)
         alerter = None
         logging.exception("CheckBinDay(): " + message)
     
-    if not pushOverArgs is None:
-        Pushover.Initialise(pushOverArgs[0], pushOverArgs[1])  
+    if not gbConfig.pushover_userkey is None:
+        Pushover.Initialise(gbConfig.pushover_userkey, gbConfig.pushover_apptoken)  
 
         if alerter is None:
             message = "Failed: " + message
@@ -35,25 +38,23 @@ def CheckBinDay(pushOverArgs):
     
 
 def main() -> None:
-    try:
+    try:        
+        l = logging.DEBUG
+        if gbConfig.loglevel == "WARN":
+            l = logging.WARN
+        logging.basicConfig(filename=gbConfig.logfile, filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', level=l)
         logging.info('===== START =====')
-        logging.basicConfig(filename="yamlscheduler.log", filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-        dotenv_path = join(dirname(__file__), '.env')
-        load_dotenv(dotenv_path+"(")
-        if not os.getenv('PUSHOVER_USER_KEY') is None:
-            pushOverArgs = [os.getenv('PUSHOVER_USER_KEY'), os.getenv('PUSHOVER_APP_TOKEN')]
-        else:
-            pushOverArgs = None
-        sch = YamlScheduler()
-        YamlScheduler.Initialise(logging, CheckBinDay, pushOverArgs)
-        YamlScheduler.Wait()
-        logging.info('===== END =====')
+        getattr(schedule.every(), gbConfig.schedule_day).at(gbConfig.schedule_time).do(CheckBinDay)
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
 
     except Exception as e:
-        logging.exception("mail(): " + e)
+        logging.exception("mail(): " + str(e))
     finally:
         logging.info("Done")
+        logging.info('===== END =====')
 
 if __name__ == '__main__':
     main()

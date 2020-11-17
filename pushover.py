@@ -35,7 +35,7 @@ class Pushover(object):
         """Notify: Send a push notification
 
         Note:
-            sound used is cashregister
+            notification sound used is sound
 
         Args:
             message (str) : The message to send

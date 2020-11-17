@@ -1,0 +1,21 @@
+appName: BinAlerter
+
+app:
+  logLevel: DEBUG
+
+scrape:
+  calendar_url: https://ilforms.wiltshire.gov.uk/WasteCollectionDays/index
+  address_url: https://ilforms.wiltshire.gov.uk/WasteCollectionDays/AddressList
+  collection_url: https://ilforms.wiltshire.gov.uk/WasteCollectionDays/CollectionList
+
+location:
+  postcode: *** ***
+  address: 1 ***
+
+pushover:
+  apptoken: **************************
+  userkey: **************************
+
+schedule:
+  day: "Sunday"
+  time: "19:00"

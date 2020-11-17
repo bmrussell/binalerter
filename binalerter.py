@@ -1,31 +1,19 @@
 import datetime
-import confuse
 import os
 import logging
 import requests
 import json
+
 from os.path import join, dirname
-from dotenv import load_dotenv
+from time import strptime
 
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
-from time import strptime
 
-from yamlscheduler import YamlScheduler
 from pushover import Pushover
 
-class Config:
-    def __init__(self, url, address_url, collection_url, postcode, address, token, clients):
-        self.calendar_url = url
-        self.address_url = address_url
-        self.collection_url = collection_url
-        self.postcode = postcode
-        self.address = address
-        self.apitoken = token
-        self.clients = clients
-
 class BinAlerter:
-    def __init__(self):
+    def __init__(self, config):
         """
         Constructor
             1. Read Configuration from YAML file
@@ -35,28 +23,11 @@ class BinAlerter:
         
         self.NextCollection = None
         self.Collecting = []
-        
-        config = confuse.Configuration('BinAlerter')
         self.config = config
 
-        logLevel = config['logLevel'].get()
-        if logLevel == "DEBUG":
-            l = logging.DEBUG
-        elif logLevel == "WARN":
-            l = logging.WARN
 
-        logfileName = os.path.join(config.config_dir(), "BinAlerter.log")
-        logging.basicConfig(filename=logfileName, filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', level=l)
-        logging.debug("BinAlerter:__init__ logging level " + logLevel)
+        logging.debug("BinAlerter:__init__ logging level " + self.config.loglevel)
 
-        self.config = Config(   config['scrape']['calendar_url'].get(),
-                                config['scrape']['address_url'].get(),
-                                config['scrape']['collection_url'].get(),
-                                config['location']['postcode'].get(),
-                                config['location']['address'].get(),
-                                config['pushover']['api_token'].get(),
-                                config['pushover']['clients'].get(),
-                            )
 
     def GetBinPage(self, session):
         # Hit the collections web page, gimme cookie
