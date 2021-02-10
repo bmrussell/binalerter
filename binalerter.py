@@ -89,6 +89,9 @@ class BinAlerter:
         #   cgw     Chargeable garden waste
         
         collectionDays = soup.find_all('a', {'data-event-id':{'pod','res','cgw'}})
+
+        logging.debug("\tGot the collection days")
+
         iBinKind = 0
         for collectionDay in collectionDays:
             # Parse date in format "Monday 11 May, 2020"
