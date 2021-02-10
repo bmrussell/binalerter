@@ -48,7 +48,8 @@ postcode: SN6 6NT
 address: 3 Park Place
 
 pushover:
-apptoken: ABCDEFGHIJKLMNOPQRS
+
+apptoken: 0987654321098765432
 userkey: 12345678901234567890
 
 schedule:
