@@ -110,6 +110,7 @@ class BinAlerter:
                 iBinKind = iBinKind + 1
             
             # Exit out if gone past the next collection day
+            # cos we're done
             if (not self.NextCollection is None) and collectionDate > self.NextCollection:
                 break
         
