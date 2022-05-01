@@ -3,7 +3,7 @@ import os
 
 class Config:
     def __init__(self):  
-        #dir = confuse.Configuration.config_dir(),      
+        #dir = confuse.Configuration.config_dir()
         confuseConfig = confuse.Configuration('BinAlerter')
         
         self.calendar_url = confuseConfig['scrape']['calendar_url'].get()

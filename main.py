@@ -37,7 +37,7 @@ def CheckBinDay():
         Pushover.Notify(message, "bugle")
     
 
-def main() -> None:
+def main() -> None:    
     try:        
         l = logging.DEBUG
         if gbConfig.loglevel == "WARN":
@@ -57,4 +57,5 @@ def main() -> None:
         logging.info('===== END =====')
 
 if __name__ == '__main__':
+    time.sleep(10)
     main()

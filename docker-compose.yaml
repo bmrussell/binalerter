@@ -1,0 +1,13 @@
+version: "3"
+
+services:
+  binalerter:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      container_name: binalerter
+
+#    Config overrride if needed 
+#      volumes:
+#        - ./config/:/usr/src/BinAlerter/
+    restart: unless-stopped
