@@ -17,5 +17,7 @@ pushover:
   userkey: **************************
 
 schedule:
-  day: "Sunday"
-  time: "19:00"
+  - day: "sunday"
+    time: "17:00"
+  - day: "wednesday"
+    time: "18:00"

@@ -3,6 +3,7 @@ import os
 import logging
 import requests
 import json
+from config import Config
 
 from os.path import join, dirname
 from time import strptime
@@ -26,28 +27,16 @@ class BinAlerter:
         self.config = config
 
 
-        logging.debug("BinAlerter:__init__ logging level " + self.config.loglevel)
+        logging.debug("BinAlerter:__init__ logging level " + self.config.Loglevel)
 
 
     def GetBinPage(self, session):
         # Hit the collections web page, gimme cookie
         logging.debug("BinAlerter.GetBinPage()")
-        getLoginFormheaders = { 'Host': 'secure.tesco.com',
-                        'Connection': 'keep-alive',
-                        'DNT': '1',
-                        'Upgrade-Insecure-Requests': '1',
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.113 Safari/537.36',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-                        'Sec-Fetch-Site': 'none',
-                        'Sec-Fetch-Mode': 'navigate',
-                        'Sec-Fetch-Dest': 'document',
-                        'Accept-Encoding': 'gzip, deflate, br',
-                        'Accept-Language': 'en-GB,en;q=0.9,en-US;q=0.8'         
-                    }
-        request = requests.Request('GET',self.config.calendar_url)
+        request = requests.Request('GET',self.config.CalendarUrl)
         prepared = request.prepare()
         response = session.send(prepared)
-        logging.debug("\tHTTP{}", response.status_code)
+        logging.debug(f"Response HTTP:{response.status_code}")
 
     def GetNextBinDay(self):
 
@@ -62,15 +51,15 @@ class BinAlerter:
         binMonth = rightNow.month
         binYear = rightNow.year
         binDay = rightNow.day   
-        params = {'Postcode': self.config.postcode, 'Month': binMonth, 'Year': binYear}
-        r = requests.post(self.config.address_url, data=params)
+        params = {'Postcode': self.config.Postcode, 'Month': binMonth, 'Year': binYear}
+        r = requests.post(self.config.AddressUrl, data=params)
         addressJson = json.loads(r.text)
 
         # Loop through the JSON response and find the address that matches the first line
         # from config
         # Grab the UPRN value to post back as a unique id for that address
         for address in addressJson["Model"]["PostcodeAddresses"]:
-            if address["AddressLine1"] == self.config.address:
+            if address["AddressLine1"] == self.config.Address:
                 uprn =  address["UPRN"]
                 break
 
@@ -79,8 +68,8 @@ class BinAlerter:
         # If there is no date in this month after today, we'll need to pull the next months calendar and take the first 
         # collection day from next month
 
-        params = {'Month': binMonth, 'Year': binYear, 'Postcode': self.config.postcode, 'Uprn': uprn}
-        r = requests.post(self.config.collection_url, data=params)
+        params = {'Month': binMonth, 'Year': binYear, 'Postcode': self.config.Postcode, 'Uprn': uprn}
+        r = requests.post(self.config.CollectionUrl, data=params)
         
         soup = BeautifulSoup(r.text, 'html.parser')
         # Calendar <a> elements are the following class values for data-event-id:
@@ -102,7 +91,7 @@ class BinAlerter:
             if collectionDate > rightNow:
                 if self.NextCollection is None:
                     self.NextCollection = collectionDate
-                    logging.debug("Found next bin day" + self.NextCollection.strftime('%d %B %Y'))
+                    logging.debug(f"Found next bin day: {self.NextCollection.strftime('%d %B %Y')}")
 
             # While we have the next collection day collect the next bin type
             if (not self.NextCollection is None) and self.NextCollection == collectionDate:

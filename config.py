@@ -1,23 +1,29 @@
 import confuse
 import os
 
+class Timing:
+
+    def __init__(self, day, time) -> None:
+        self.Day = day
+        self.Time = time
+
 class Config:
     def __init__(self):  
-        #dir = confuse.Configuration.config_dir()
         confuseConfig = confuse.Configuration('BinAlerter')
-        
-        self.calendar_url = confuseConfig['scrape']['calendar_url'].get()
-        self.address_url = confuseConfig['scrape']['address_url'].get()
-        self.collection_url = confuseConfig['scrape']['collection_url'].get()
-        
-        self.postcode = confuseConfig['location']['postcode'].get()
-        self.address = confuseConfig['location']['address'].get()
-        
-        self.pushover_apptoken = confuseConfig['pushover']['apptoken'].get()
-        self.pushover_userkey = confuseConfig['pushover']['userkey'].get()
 
-        self.loglevel = confuseConfig['app']['logLevel'].get()
-        self.logfile = os.path.join(confuseConfig.config_dir(), "BinAlerter.log")
+        self.CalendarUrl = confuseConfig['scrape']['calendar_url'].get()
+        self.AddressUrl = confuseConfig['scrape']['address_url'].get()
+        self.CollectionUrl = confuseConfig['scrape']['collection_url'].get()
+        
+        self.Postcode = confuseConfig['location']['postcode'].get()
+        self.Address = confuseConfig['location']['address'].get()
+        
+        self.PushoverToken = confuseConfig['pushover']['apptoken'].get()
+        self.PushoverKey = confuseConfig['pushover']['userkey'].get()
 
-        self.schedule_day = confuseConfig['schedule']['day'].get()
-        self.schedule_time = confuseConfig['schedule']['time'].get()        
+        self.Loglevel = confuseConfig['app']['logLevel'].get()
+        self.Logfile = os.path.join(confuseConfig.config_dir(), "BinAlerter.log")
+
+        self.Timings = []
+        for t in confuseConfig['schedule']:
+            self.Timings.append(Timing(t['day'].get(), t['time'].get()))

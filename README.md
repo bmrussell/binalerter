@@ -56,3 +56,5 @@ schedule:
 day: "sunday"
 time: "19:00"
 ```
+
+https://confuse.readthedocs.io/en/latest/examples.html
