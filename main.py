@@ -63,7 +63,6 @@ def main() -> None:
         logging.getLogger('').addHandler(console)           # add the handler to the root logger
 
         logging.info('===== START =====')
-        CheckBinDay()
         for t in gbConfig.Timings:
             logging.info(f'Checking every {t.Day} at {t.Time}')
             getattr(schedule.every(), t.Day).at(t.Time).do(CheckBinDay)

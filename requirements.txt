@@ -8,3 +8,4 @@ requests
 schedule
 soupsieve
 urllib3
+python-dotenv

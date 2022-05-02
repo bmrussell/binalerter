@@ -2,10 +2,11 @@ version: "3"
 
 services:
   binalerter:
+    container_name: binalerter
+    image: bmrussell/binalerter
     build:
       context: .
       dockerfile: ./Dockerfile
-      container_name: binalerter
 
 #    Config overrride if needed 
 #      volumes:
