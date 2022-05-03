@@ -40,7 +40,7 @@ def CheckBinDay():
             for bin in alerter.Collecting:
                     message = message + bin + "\n"
             message = message + "out on " + alerter.NextCollection.strftime('%d %B %Y') + "."
-            logging.info(message)
+            logging.info(message.replace('\n', '\\n'))
 
         Pushover.Notify(message, "bugle")
     

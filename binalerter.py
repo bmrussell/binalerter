@@ -42,7 +42,7 @@ class BinAlerter:
 
         logging.debug("BinAlerter.GetNextBinDay()")
         session = requests.Session()
-        logging.debug("\tOpened session")
+        logging.debug("Opened session")
 
         self.GetBinPage(session)
 
@@ -79,7 +79,7 @@ class BinAlerter:
         
         collectionDays = soup.find_all('a', {'data-event-id':{'pod','res','cgw'}})
 
-        logging.debug("\tGot the collection days")
+        logging.debug("Got the collection days")
 
         iBinKind = 0
         for collectionDay in collectionDays:
@@ -91,7 +91,7 @@ class BinAlerter:
             if collectionDate > rightNow:
                 if self.NextCollection is None:
                     self.NextCollection = collectionDate
-                    logging.debug(f"Found next bin day: {self.NextCollection.strftime('%d %B %Y')}")
+                    logging.info(f"Found next bin day: {self.NextCollection.strftime('%d %B %Y')}")
 
             # While we have the next collection day collect the next bin type
             if (not self.NextCollection is None) and self.NextCollection == collectionDate:
@@ -103,4 +103,4 @@ class BinAlerter:
             if (not self.NextCollection is None) and collectionDate > self.NextCollection:
                 break
         
-        logging.debug("\tDone")
+        logging.debug("Done")
