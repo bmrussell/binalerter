@@ -12,7 +12,7 @@ def printlog(message):
     t = datetime.datetime.now().strftime(f'%d/%M/%Y %H:%M:%S')
     print(f'{t}\t{message}')
 
-def main() -> None:    
+def main() -> None:
     # Get parameters
     today = datetime.datetime.now().date()
     tomorrow = today + datetime.timedelta(days=1)
@@ -120,3 +120,4 @@ def main() -> None:
 
 if __name__ == '__main__':    
     main()
+    exit(0)
