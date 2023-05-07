@@ -34,25 +34,28 @@ podman build -t binalerter .
   podman run --name binalerter binalerter
   ```
 
-# Schedule with systemd
+4. Use the included systemd unit and timer files for docker or
 
-1. Generate a unit file
+5. Make them with podman
+
+* Generate a unit file
 ```bash
-mkdir -p ~/.config/systemd/user
-podman run --name binalerter binalerter
 podman generate systemd --name binalerter --new > ~/.config/systemd/user/container-binalerter.service
+podman rm binalerter
 ```
 
-2. In the generated file:
-*  Change `Restart=on-failure` to `Restart=no` and
-* `WantedBy=default.target` to `WantedBy=timers.target` and 
-* `Type=Notify` to `Type=oneshot` and
-* Remove the `ExecStop` and `ExecStopPost` lines
+* In the generated file:
+  *  Change `Restart=on-failure` to `Restart=no` and
+  * `WantedBy=default.target` to `WantedBy=timers.target` and 
+  * `Type=Notify` to `Type=oneshot` and
+  * Remove the `ExecStop` and `ExecStopPost` lines
 
-as we will schedule it on a timer. 
+# Schedule with systemd
 
 3. Enable it with systemd
 ```bash
+mkdir -p ~/.config/systemd/user
+cp container-binalerter.* ~/.config/systemd/user
 systemctl --user enable container-binalerter.service
 ```
 
@@ -61,9 +64,10 @@ systemctl --user enable container-binalerter.service
 cp container-binalerter.timer ~/.config/systemd/user/
 systemctl --user enable container-binalerter.timer
 systemctl --user start container-binalerter.timer
+systemctl list-timers --user --all
 ```
 
-Make your user linger so systemd timers still work even if they're not logged in
+Make your user linger so user processes still hang around even if they're not logged in. Not needed for docker
 ```bash
 sudo loginctl enable-linger $USER
 ```
