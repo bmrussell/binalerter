@@ -1,11 +1,3 @@
-﻿beautifulsoup4
-certifi
-chardet
-confuse
-idna
-PyYAML
+﻿confuse
+beautifulsoup4
 requests
-schedule
-soupsieve
-urllib3
-python-dotenv

@@ -1,15 +1,17 @@
 # Start from standard python image
 FROM python:3
 
-WORKDIR /usr/src/BinAlerter
+WORKDIR /app
 
 COPY requirements.txt .
-# Python Confuse library override for location of config.yaml file
+
+# Make Python Confuse library look for config.yaml file in the right place
 # See https://confuse.readthedocs.io/en/latest/usage.html#search-paths
-ENV BINALERTERDIR=/usr/src/BinAlerter
+ENV BINALERTERDIR=/app
+
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY *.py ./
-COPY ./config/config.yaml ./
+COPY binalerter.py ./
+COPY config.yaml ./
 
-CMD [ "python", "./main.py" ]
+CMD [ "python", "./binalerter.py" ]
