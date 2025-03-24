@@ -16,6 +16,14 @@ source env/bin/activate
 pip install -r requirements.txt
 ```
 
+# Building
+`build` script tags the image with `keep=true` so that it may be excluded with `docker prune`
+
+```bash
+docker image inspect binalerter --format '{{json .Config.Labels}}'
+{"keep":"true"}
+```
+
 # Running
 ```bash
 python3 binalerter.py
