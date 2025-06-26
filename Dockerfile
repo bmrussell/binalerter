@@ -1,5 +1,5 @@
 # Start from standard python image
-FROM python:3
+FROM python:slim
 
 WORKDIR /app
 
