@@ -6,12 +6,48 @@ from os.path import join, dirname
 from time import strptime
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
+from urllib.parse import urlencode
 import http.client, urllib
 
 def printlog(message):
     t = datetime.datetime.now().strftime(f'%d/%M/%Y %H:%M:%S')
     print(f'{t}\t{message}')
 
+def get_collections(soup):
+    # Extract the relevant tags
+    days = soup.find_all("span", class_="card-collection-day")
+    dates = soup.find_all("span", class_="card-collection-date")
+    months = soup.find_all("span", class_="card-collection-month")
+
+    collection_lis = soup.find_all("li", class_=["collection-type-RES", "collection-type-POD", "collection-type-CGW"])
+
+    results = []
+
+    # Check that all parts align
+    if len(days) == len(dates) == len(months) == len(collection_lis):
+        for day, date, month, li in zip(days, dates, months, collection_lis):
+            # Build full date string
+            day_str = day.get_text(strip=True)
+            date_str = date.get_text(strip=True)
+            month_str = month.get_text(strip=True)
+            collection_str = li.get_text(strip=True)
+            
+            # Combine and parse into datetime object
+            full_date_str = f"{day_str} {date_str} {month_str}"
+            try:
+                parsed_date = datetime.datetime.strptime(full_date_str, "%A %d %B %Y").date()
+            except ValueError:
+                # Fallback in case of formatting issues
+                parsed_date = full_date_str
+
+            results.append([parsed_date, collection_str])
+    else:
+        raise ValueError("Mismatched counts of date parts and collection types.")    
+    
+    return results
+    
+    
+    
 def main() -> None:
     # Get parameters
     today = datetime.datetime.now().date()
@@ -30,6 +66,10 @@ def main() -> None:
     pushoverToken = confuseConfig['pushover']['apptoken'].get()
     pushoverKey = confuseConfig['pushover']['userkey'].get()
 
+    if address_url is None or collection_url is None:
+        printlog("URL is None!")
+        exit()
+        
     if calendar_url != None:
         printlog('Got config')
     else:
@@ -59,7 +99,7 @@ def main() -> None:
 
     # Find addresses for the postcode and year/month (for some reason)
     params = {'Postcode': postcode, 'Month': today.month, 'Year': today.year}
-    r = requests.post(address_url, data=params)
+    r = requests.post(address_url, data=params) # type: ignore
     addressJson = json.loads(r.text)
 
     # Select our address
@@ -77,37 +117,30 @@ def main() -> None:
 
     # Get the collection calendar
     params = {'Month': today.month, 'Year': today.year, 'Postcode': postcode, 'Uprn': uprn}
-    r = requests.post(collection_url, data=params)
+    r = requests.post(collection_url, data=params) # type: ignore
     soup = BeautifulSoup(r.text, 'html.parser')
-    collectionDays = soup.find_all('a', {'data-event-id': {'pod', 'res', 'cgw'}})
-
-    printlog(f'Got {len(collectionDays)} collection days')
+    
+    collections = get_collections(soup)
+    printlog(f'Got {len(collections)} collection days')
 
     # See if the next collection is tomorrow
     collection = None
-    for collectionDay in collectionDays:
-        # Parse date in format 'Monday 11 May, 2020'
-        collectionTime = strptime(collectionDay['data-original-datetext'], '%A %d %B, %Y')
-        collectionDate = datetime.datetime(
-            collectionTime.tm_year, collectionTime.tm_mon, collectionTime.tm_mday
-        ).date()
-
-        if collectionDate == tomorrow:
-            collection = collectionDay['data-original-title']
+    for collection in collections:
+        if collection[0] == tomorrow:
             break
 
-    # Send alert if the collection was found to be tomorrow
+    # # Send alert if the collection was found to be tomorrow
     if collection != None:
         printlog(f'Collection tomorrow')
         conn = http.client.HTTPSConnection('api.pushover.net:443')
         conn.request(
             'POST',
             '/1/messages.json',
-            urllib.parse.urlencode(
+            urlencode(
                 {
                     'token': f'{pushoverToken}',
                     'user': f'{pushoverKey}',
-                    'message': f'Put {collection} out tonight',
+                    'message': f'Put {collection[1]} out tonight',
                 }
             ),
             {'Content-type': 'application/x-www-form-urlencoded'},
