@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 
-param([string]$PostCode = "SN6 6NX", $ApiUrl="https://ilforms.wiltshire.gov.uk/WasteCollectionDays/AddressList", $CollectionUrl="https://ilforms.wiltshire.gov.uk/WasteCollectionDays/CollectionList")
+param([string]$PostCode = "SN6 6NX", $ApiUrl = "https://ilforms.wiltshire.gov.uk/WasteCollectionDays/AddressList", $CollectionUrl = "https://ilforms.wiltshire.gov.uk/WasteCollectionDays/CollectionList")
 
 $ProgressPreference = 'SilentlyContinue'
 
@@ -26,55 +26,55 @@ $result = Invoke-WebRequest -Uri $uri -Headers $headers
 
 
 
-$postParams = @{Postcode=$PostCode;Month=(Get-Date).Month;Year=(Get-Date).Year}
+$postParams = @{Postcode = $PostCode; Month = (Get-Date).Month; Year = (Get-Date).Year }
 $result = Invoke-WebRequest -Uri $ApiUrl -Method POST -Body $postParams
 $resultJson = ConvertFrom-Json -InputObject $result
 
 $addressId = $resultJson.Model.PostcodeAddresses[0].UPRN
 $postParams.Add('Uprn', $addressId)
 
-$postParams = @{Postcode=$PostCode;Month=(Get-Date).Month;Year=(Get-Date).Year; Uprn=$addressId}
+$postParams = @{Postcode = $PostCode; Month = (Get-Date).Month; Year = (Get-Date).Year; Uprn = $addressId }
 $result = Invoke-WebRequest -Uri $CollectionUrl -Method POST -Body $postParams
 
-$regex = '<a\s+data-event-id="(?<type>res|pod|cgw)"\s+class="event service-(res|pod|cgw)"\s+data-toggle="[a-z]+"\s+title=""\s+data-original-datetext="([A-Za-z]+)\s+(?<day>[0-9]{1,2})\s(?<month>[A-Za-z]*),\s(?<year>[0-9]{4})"'
 
-# group 1 = pod/res/cgw
-# Group 3 = Day name
-# Group 4 = Day number
-# Group 5 = Month Name
-# Group 6 = Year
+$html = $result.Content
+# Patterns to extract each part of the date
+$regexDayNames = '<span\s+class="card-collection-day">\s*([A-Za-z]+)\s*</span>'
+$regexDayNumbers = '<span class="card-collection-date">\s*(\d{1,2})\s*</span>'
+$regexMonthYears = '<span class="card-collection-month">\s*(.*?)\s*</span>'
+$regexCollection = '<li class="collection-type-[^"]+">\s*(.*?)\s*</li>'
 
-$collections = @()
+# Extract each component of the date
+$daynames = [regex]::Matches($html, $regexDayNames) | ForEach-Object { $_.Groups[1].Value.Trim() }
+$daynumbers = [regex]::Matches($html, $regexDayNumbers) | ForEach-Object { $_.Groups[1].Value.Trim() }
+$monthyears = [regex]::Matches($html, $regexMonthYears) | ForEach-Object { $_.Groups[1].Value.Trim() }
+$collections = [regex]::Matches($html, $regexCollection) | ForEach-Object { $_.Groups[1].Value.Trim() }
 
-$allmatches = ($result.Content | select-string -pattern $regex  -AllMatches)
-$nextIndicator = "*"
-for ($i = 0; $i -lt $allmatches.matches.count; $i++) {
-    $collection = New-Object -TypeName CollectionEvent
-    $type = $allmatches.matches[$i].groups['type'].value
-    if ($type -eq "cgw" ) {
-        $collection.CollectionType = "Garden"
-    } elseif ($type -eq "pod" ) {
-        $collection.CollectionType = "Cardboard & Glass"
-    } elseif ($type -eq "res" ) {
-        $collection.CollectionType = "Household"
-    } else {
-        $collection.CollectionType = "Unknown!"
+$collectionEvents = for ($i = 0; $i -lt $collections.Count; $i++) {
+    [CollectionEvent]@{
+        CollectionType = $collections[$i]
+        CollectionDate = [datetime]::ParseExact("$($daynumbers[$i]) $($monthyears[$i])", "d MMMM yyyy", $null)
     }
+}
+#$collectionEvents
 
-    $collectionDay = $allmatches.matches[$i].groups['day'].value
-    $collectionMonth = $allmatches.matches[$i].groups['month'].value
-    $collectionYear = $allmatches.matches[$i].groups['year'].value
-    $collection.CollectionDate = [datetime]::parseexact("$($collectionDay)-$($collectionMonth)-$($collectionYear) 07:00", "d-MMMM-yyyy HH:mm", $null)
+#$collectionEvents  | Where-Object { $_.CollectionDate -gt (Get-Date).Date } 
 
-    if ($collection.CollectionDate -lt (Get-Date)) {
-        $collection.CollectionDate = $null
-    }
 
-    $collections += $collection
+
+$collectionEvents |
+Where-Object { $_.CollectionDate -gt (Get-Date).Date } |
+Select-Object CollectionType, @{Name = 'CollectionDate' 
+    Expression  = {
+        $date = $_.CollectionDate
+        $formattedDate = $date.ToString('dd MMMM yyyy')
+        if ($date.Date -eq (Get-Date).AddDays(1).Date) {
+            "$formattedDate*"
+        }
+        else {
+            $formattedDate
+        }
+    }    
+        
 }
 
-
-$collections
-
-
-$ProgressPreference = 'Continue'
