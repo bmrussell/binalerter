@@ -1,4 +1,5 @@
 import datetime
+from datetime import date, timedelta, datetime
 import requests
 import json
 import confuse
@@ -10,7 +11,7 @@ from urllib.parse import urlencode
 import http.client, urllib
 
 def printlog(message):
-    t = datetime.datetime.now().strftime(f'%d/%M/%Y %H:%M:%S')
+    t = datetime.now().strftime(f'%d/%M/%Y %H:%M:%S')
     print(f'{t}\t{message}')
 
 def get_collections(soup):
@@ -35,7 +36,7 @@ def get_collections(soup):
             # Combine and parse into datetime object
             full_date_str = f"{day_str} {date_str} {month_str}"
             try:
-                parsed_date = datetime.datetime.strptime(full_date_str, "%A %d %B %Y").date()
+                parsed_date = datetime.strptime(full_date_str, "%A %d %B %Y").date()
             except ValueError:
                 # Fallback in case of formatting issues
                 parsed_date = full_date_str
@@ -50,8 +51,8 @@ def get_collections(soup):
     
 def main() -> None:
     # Get parameters
-    today = datetime.datetime.now().date()
-    tomorrow = today + datetime.timedelta(days=1)
+    today = datetime.now().date()
+    tomorrow = today + timedelta(days=1)
     printlog('Started')
 
     confuseConfig = confuse.Configuration('BinAlerter', __name__)
@@ -124,12 +125,10 @@ def main() -> None:
     printlog(f'Got {len(collections)} collection days')
 
     # See if the next collection is tomorrow
-    collection = None
-    for collection in collections:
-        if collection[0] == tomorrow:
-            break
-
-    # # Send alert if the collection was found to be tomorrow
+    tomorrow = date.today() + timedelta(days=1)
+    collection = next((entry for entry in collections if entry[0] == tomorrow), None)
+    
+    # Send alert if the collection was found to be tomorrow
     if collection != None:
         printlog(f'Collection tomorrow')
         conn = http.client.HTTPSConnection('api.pushover.net:443')
@@ -146,7 +145,7 @@ def main() -> None:
             {'Content-type': 'application/x-www-form-urlencoded'},
         )
         conn.getresponse()
-        printlog(f'Sent Pushover [Put {collection} out tonight]')
+        printlog(f'Sent Pushover [Put {collection[1]} out tonight]')
     else:
         printlog(f'No collection tomorrow')
 
