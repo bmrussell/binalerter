@@ -48,7 +48,7 @@ $regexCollection = '<li class="collection-type-[^"]+">\s*(.*?)\s*</li>'
 $daynames = [regex]::Matches($html, $regexDayNames) | ForEach-Object { $_.Groups[1].Value.Trim() }
 $daynumbers = [regex]::Matches($html, $regexDayNumbers) | ForEach-Object { $_.Groups[1].Value.Trim() }
 $monthyears = [regex]::Matches($html, $regexMonthYears) | ForEach-Object { $_.Groups[1].Value.Trim() }
-$collections = [regex]::Matches($html, $regexCollection) | ForEach-Object { $_.Groups[1].Value.Trim() }
+$collections = [regex]::Matches($html, $regexCollection) | ForEach-Object { if ($_.Groups[1].Value.Trim().substring(0,5) -eq "Mixed") { "Plastic & Glass" } else {$_.Groups[1].Value.Trim()}}
 
 $collectionEvents = for ($i = 0; $i -lt $collections.Count; $i++) {
     [CollectionEvent]@{
