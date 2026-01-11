@@ -1,5 +1,5 @@
 # Start from standard python image
-FROM python:slim
+FROM python:3.13.9-slim
 
 WORKDIR /app
 
@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY binalerter.py ./
 COPY config.yaml ./
 
-CMD [ "python", "./binalerter.py" ]
+CMD [ "python3", "./binalerter.py" ]

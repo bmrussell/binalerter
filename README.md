@@ -34,7 +34,7 @@ python3 binalerter.py
 1. Create `config.yaml` from the example
 2. Build and name image
 ```bash
-podman build -t binalerter .
+podman build --label=keep -t binalerter .
   ```
 3. Run image
 
