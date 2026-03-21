@@ -9,7 +9,7 @@ class CollectionEvent {
     [Nullable[datetime]]$CollectionDate
 }
 
-function Map-Name {
+function Format-Name {
     param (
         [string]$FullName
     )
@@ -42,25 +42,43 @@ $result = Invoke-WebRequest -Uri $uri -Headers $headers
 
 
 # Supply postcode
-$postParams = @{Postcode = $PostCode; Month = (Get-Date).Month; Year = (Get-Date).Year }
-$result = Invoke-WebRequest -Uri $ApiUrl -Method POST -Body $postParams
-$resultJson = ConvertFrom-Json -InputObject $result
+$tryAgain = $true
+$month = (Get-Date).Month
+$year = (Get-Date).Year
+while ($tryAgain) {    
+    $postParams = @{Postcode = $PostCode; Month = $month; Year = $year }
+    $result = Invoke-WebRequest -Uri $ApiUrl -Method POST -Body $postParams
+    $resultJson = ConvertFrom-Json -InputObject $result
 
-# Get the collections using the address ID from the first postcode address
-$addressId = $resultJson.Model.PostcodeAddresses[0].UPRN
-$postParams.Add('Uprn', $addressId)
-$postParams = @{Postcode = $PostCode; Month = (Get-Date).Month; Year = (Get-Date).Year; Uprn = $addressId }
-$result = Invoke-WebRequest -Uri $CollectionUrl -Method POST -Body $postParams
-$html = $result.Content
+    # Get the collections using the address ID from the first postcode address
+    $addressId = $resultJson.Model.PostcodeAddresses[0].UPRN
+    $postParams.Add('Uprn', $addressId)
+    $postParams = @{Postcode = $PostCode; Month = $month; Year = $year; Uprn = $addressId }
+    $result = Invoke-WebRequest -Uri $CollectionUrl -Method POST -Body $postParams
+    $html = $result.Content
 
-# Get the day, month/year and collection type from the HTML
-$regexDayNumbers = '<span class="card-collection-date">\s*(\d{1,2})\s*</span>'
-$regexMonthYears = '<span class="card-collection-month">\s*(.*?)\s*</span>'
-$regexCollection = '<li class="collection-type-[^"]+">\s*(.*?)\s*</li>'
+    # Get the day, month/year and collection type from the HTML
+    $regexDayNumbers = '<span class="card-collection-date">\s*(\d{1,2})\s*</span>'
+    $regexMonthYears = '<span class="card-collection-month">\s*(.*?)\s*</span>'
+    $regexCollection = '<li class="collection-type-[^"]+">\s*(.*?)\s*</li>'
 
-$daynumbers = [regex]::Matches($html, $regexDayNumbers) | ForEach-Object { $_.Groups[1].Value.Trim() }
-$monthyears = [regex]::Matches($html, $regexMonthYears) | ForEach-Object { $_.Groups[1].Value.Trim() }
-$collections = [regex]::Matches($html, $regexCollection) | ForEach-Object { Map-Name $_.Groups[1].Value.Trim() }
+    $daynumbers = [regex]::Matches($html, $regexDayNumbers) | ForEach-Object { $_.Groups[1].Value.Trim() }
+
+    $monthyears = [regex]::Matches($html, $regexMonthYears) | ForEach-Object { $_.Groups[1].Value.Trim() }
+    $collections = [regex]::Matches($html, $regexCollection) | ForEach-Object { Format-Name $_.Groups[1].Value.Trim() }
+
+    if ($month -eq (Get-Date).Month -and $daynumbers[$daynumbers.Count-1] -le (Get-Date).Day) {
+        # If the last collection date is in the past, try the next month
+        $month++
+        if ($month -gt 12) {
+            $month = 1
+            $year++
+        }
+    }
+    else {
+        $tryAgain = $false
+    }
+}
 
 $collectionEvents = for ($i = 0; $i -lt $collections.Count; $i++) {
     [CollectionEvent]@{
@@ -70,20 +88,30 @@ $collectionEvents = for ($i = 0; $i -lt $collections.Count; $i++) {
 }
 
 # Format output, adding a '*' if the next collection is tomorrow
-$collectionEvents |
-Where-Object { $_.CollectionDate -gt (Get-Date).Date } |
-Select-Object CollectionType, @{Name = 'CollectionDate' 
-    Expression  = {
-        $date = $_.CollectionDate
+$today = (Get-Date).Date
+$cutoff = $today.AddDays(1)
+
+# Get all future dates
+$futureEvents = $collectionEvents |
+    Where-Object { $_.CollectionDate.Date -gt $today } |
+    Sort-Object CollectionDate
+# Find the first date that is more than one day after today
+$firstBeyondTomorrow = $futureEvents |
+    Where-Object { $_.CollectionDate.Date -ge $cutoff } |
+    Select-Object -First 1 -ExpandProperty CollectionDate
+
+$futureEvents |
+Select-Object CollectionType, @{
+    Name = 'CollectionDate'
+    Expression = {
+        $date = $_.CollectionDate.Date
         $formattedDate = $date.ToString('dd MMMM yyyy')
-        if ($date.Date -eq (Get-Date).AddDays(1).Date) {
+
+        if ($firstBeyondTomorrow -and $date -eq $firstBeyondTomorrow.Date) {
             "$formattedDate*"
         }
         else {
             $formattedDate
         }
-    }    
-        
+    }
 }
-
-
