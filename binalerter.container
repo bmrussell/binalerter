@@ -1,0 +1,7 @@
+[Unit]
+Description=binalerter
+
+[Container]
+Image=binalerter.build
+ContainerName=binalerter
+

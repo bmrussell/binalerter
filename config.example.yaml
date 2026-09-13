@@ -15,9 +15,3 @@ location:
 pushover:
   apptoken: **************************
   userkey: **************************
-
-schedule:
-  - day: "sunday"
-    time: "17:00"
-  - day: "wednesday"
-    time: "18:00"

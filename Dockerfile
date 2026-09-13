@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY binalerter.py ./
 COPY config.yaml ./
 
-CMD [ "python3", "./binalerter.py" ]
+CMD [ "python3", "-u", "./binalerter.py" ]

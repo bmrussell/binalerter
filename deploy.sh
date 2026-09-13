@@ -1,2 +1,6 @@
 #!/usr/bin/env bash
-cp container-binalerter.* ~/.config/systemd/user
+cp binalerter.build     ~/.config/containers/systemd
+cp binalerter.container ~/.config/containers/systemd
+cp binalerter.timer     ~/.config/containers/systemd
+
+systemctl --user daemon-reload

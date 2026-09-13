@@ -1,0 +1,8 @@
+[Build]
+ImageTag=localhost/binalerter:latest
+File=Dockerfile
+Label=keep=true
+SetWorkingDirectory=%h/code/github/binalerter
+
+[Install]
+WantedBy=default.target

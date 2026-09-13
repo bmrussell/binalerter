@@ -1,5 +1,5 @@
 [Unit]
-Description=Daily check for putting bins out
+Description=Run BinAlerter daily at 17:00
 
 [Timer]
 OnCalendar=*-*-* 17:00:00
@@ -7,3 +7,4 @@ Persistent=true
 
 [Install]
 WantedBy=timers.target
+
